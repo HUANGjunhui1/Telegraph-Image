@@ -7,20 +7,25 @@
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <title>Telegraph-Image | 免费图床</title>
 <style>
-/* Design tokens carried over from the original Nuxt homepage so the look stays
-   continuous: #0297f8 pill buttons, #5e6878 body copy, a white card with the
-   bg.svg crest and the same soft double shadow, over a wallpaper backdrop with
-   a 240deg tint. */
+/* Starry theme: a deep-space backdrop (layered nebula gradients + a canvas
+   starfield drawn by the script below) under dark glass cards. Accent is a
+   starlight blue-to-violet gradient; status colors are lifted for contrast
+   on dark surfaces. Layout, spacing rhythm and every class hook are carried
+   over from the previous design so the markup and script stay untouched. */
 :root {
-  --accent: #0297f8;
-  --accent-soft: rgba(2, 151, 248, .1);
-  --ink: #3d4a5c;
-  --body: #5e6878;
-  --muted: #9aa5b4;
-  --line: #eef1f4;
-  --ok: #1bc1a1;
-  --err: #e5484d;
-  --card-shadow: 0 0 32px 0 rgba(12, 12, 13, .1), 0 2px 16px 0 rgba(12, 12, 13, .05);
+  --accent: #4da3ff;
+  --accent-2: #7c6cff;
+  --accent-soft: rgba(96, 150, 255, .16);
+  --ink: #e9eef8;
+  --body: #a7b1c6;
+  --muted: #6f7b93;
+  --line: rgba(255, 255, 255, .08);
+  --ok: #2fe6b0;
+  --err: #ff6b72;
+  --glass: rgba(12, 17, 36, .68);
+  --glass-border: rgba(255, 255, 255, .09);
+  --card-shadow: 0 24px 60px rgba(1, 4, 16, .55), 0 2px 10px rgba(1, 4, 16, .35),
+    inset 0 1px 0 rgba(255, 255, 255, .06);
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
@@ -31,34 +36,27 @@ body {
   color: var(--body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Fallback gradient shows immediately and stays put if the wallpaper request
-     fails, so the page is never a flat white screen. */
-  background: linear-gradient(160deg, #1b2440 0%, #35406b 45%, #6f5878 75%, #b3766a 100%);
+  /* Deep-space gradient paints immediately and stays if anything above it
+     fails, so the page is never a flat screen. */
+  background: linear-gradient(165deg, #04060f 0%, #081026 45%, #0d1030 75%, #120b2e 100%);
 }
+::selection { background: rgba(96, 150, 255, .38); color: #fff; }
 
-/* ---- wallpaper slideshow (cross-fading, mirrors the original 30s cycle) ---- */
-#backdrop { position: fixed; inset: 0; z-index: -2; overflow: hidden; }
-#backdrop figure {
-  position: absolute; inset: 0; margin: 0;
-  background-size: cover; background-position: center; background-repeat: no-repeat;
-  opacity: 0; will-change: opacity;
-  animation: wallpaper 30s linear infinite;
-  backface-visibility: hidden;
+/* ---- starfield backdrop ---- */
+#backdrop {
+  position: fixed; inset: 0; z-index: -2; overflow: hidden;
+  background:
+    radial-gradient(1100px 520px at 82% -10%, rgba(96, 78, 190, .28), transparent 60%),
+    radial-gradient(900px 480px at 8% 108%, rgba(28, 92, 160, .22), transparent 60%),
+    radial-gradient(620px 300px at 55% 42%, rgba(64, 110, 200, .10), transparent 65%),
+    linear-gradient(165deg, #04060f 0%, #081026 45%, #0d1030 75%, #120b2e 100%);
+  background-size: cover; background-position: center;
 }
-@keyframes wallpaper {
-  0%   { opacity: 0 }
-  3%   { opacity: 1 }
-  20%  { opacity: 1 }
-  28%  { opacity: 0 }
-  100% { opacity: 0 }
-}
+#starfield { position: absolute; inset: 0; display: block; }
 #tint {
   position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(240deg, rgba(150, 50, 50, .3), rgba(0, 0, 200, 0));
-}
-@media (prefers-reduced-motion: reduce) {
-  #backdrop figure { animation: none; }
-  #backdrop figure:first-child { opacity: 1; }
+  /* Soft vignette keeps the edges deep and the center luminous. */
+  background: radial-gradient(120% 90% at 50% 38%, transparent 55%, rgba(2, 4, 12, .52) 100%);
 }
 
 /* ---- page frame ---- */
@@ -66,80 +64,100 @@ body {
 .topbar { display: flex; justify-content: flex-end; align-items: center; gap: 4px; }
 .topbar a {
   display: inline-flex; align-items: center; gap: 6px;
-  color: #fff; text-decoration: none; font-size: 12px; font-weight: 500;
+  color: #dbe6ff; text-decoration: none; font-size: 12px; font-weight: 500;
   padding: 6px 11px; border-radius: 40px;
-  background: rgba(255, 255, 255, .1);
-  border: 1px solid rgba(255, 255, 255, .16);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .13);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   transition: background .18s, border-color .18s, transform .18s;
 }
-.topbar a:hover { background: rgba(255, 255, 255, .2); border-color: rgba(255, 255, 255, .3); }
+.topbar a:hover { background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .28); }
 .topbar a:active { transform: translateY(1px); }
 .icon { width: 14px; height: 14px; flex: none; display: block; }
 .brand {
-  color: #fff; text-align: center; font-size: 23px; font-weight: 800;
-  letter-spacing: .4px; padding: 26px 0 14px; margin: 0;
-  text-shadow: 0 1px 14px rgba(0, 0, 0, .28);
+  color: #fff; text-align: center; font-size: 25px; font-weight: 800;
+  letter-spacing: .6px; padding: 26px 0 14px; margin: 0;
+  background: linear-gradient(180deg, #ffffff 20%, #c3d4ff 90%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 14px rgba(96, 150, 255, .35));
 }
 .main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-footer { text-align: center; font-size: 12px; color: rgba(255, 255, 255, .85); padding-top: 26px; }
-footer a { color: #fff; font-weight: 700; text-decoration: none; }
+footer { text-align: center; font-size: 12px; color: rgba(219, 230, 255, .55); padding-top: 26px; }
+footer a { color: rgba(219, 230, 255, .85); font-weight: 700; text-decoration: none; }
 footer a:hover { opacity: .75; }
 
 /* ---- shared card chrome ---- */
 .card {
-  background: #fff;
-  border-radius: 3px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   box-shadow: var(--card-shadow);
+  backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%);
   font-size: 14px;
 }
-.board { display: flex; gap: 22px; align-items: stretch; width: 100%; max-width: 760px; }
+.board { display: flex; gap: 22px; align-items: stretch; width: 100%; max-width: 780px; }
 
 /* ---- left: upload ---- */
 .uploader {
-  width: 314px; flex: none;
-  background: #fff url(/bg.svg) top / 110% no-repeat;
-  cursor: pointer;
-  transition: box-shadow .2s;
+  width: 314px; flex: none; cursor: pointer;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(120, 160, 255, .10), transparent 55%),
+    var(--glass);
+  transition: box-shadow .2s, border-color .2s;
 }
+.uploader:hover { border-color: rgba(255, 255, 255, .16); }
 .uploader:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .uploader .inner {
   height: 100%; min-height: 370px; padding: 30px 24px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
 }
 .ring {
-  width: 80px; height: 80px; border-radius: 50%; border: 4px solid #c7cfd7;
+  width: 80px; height: 80px; border-radius: 50%;
+  border: 1.5px solid rgba(160, 190, 255, .38);
+  background: radial-gradient(circle at 32% 28%, rgba(140, 180, 255, .24), rgba(80, 110, 220, .08) 62%);
+  box-shadow: 0 0 0 6px rgba(110, 150, 255, .05), 0 12px 32px rgba(16, 36, 110, .5),
+    inset 0 1px 0 rgba(255, 255, 255, .16);
   display: flex; align-items: center; justify-content: center; position: relative; flex: none;
-  transition: border-color .2s;
+  transition: border-color .2s, box-shadow .2s;
 }
 .ring svg { width: 42px; height: 42px; }
 .ring::before {
   content: ''; position: absolute; inset: -5px; border-radius: 50%;
-  border: 1px solid rgba(199, 207, 215, .5);
+  border: 1px solid rgba(150, 185, 255, .35);
   animation: halo 1.8s ease-out infinite;
 }
 @keyframes halo {
   0%   { transform: scale(1); opacity: .9 }
   100% { transform: scale(1.34); opacity: 0 }
 }
-.uploader.dragover .ring { border-color: var(--accent); }
-.uploader.dragover { box-shadow: 0 0 0 2px var(--accent), var(--card-shadow); }
+.uploader.dragover .ring {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 6px rgba(96, 150, 255, .14), 0 0 34px rgba(96, 150, 255, .4),
+    inset 0 1px 0 rgba(255, 255, 255, .16);
+}
+.uploader.dragover {
+  border-color: rgba(120, 170, 255, .55);
+  box-shadow: 0 0 0 2px rgba(96, 150, 255, .55), 0 24px 60px rgba(1, 4, 16, .55);
+}
 .hint { text-align: center; font-size: 12px; line-height: 1.8; }
 .hint b { display: block; color: var(--ink); font-size: 14px; font-weight: 700; margin-bottom: 4px; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-  border: 0; border-radius: 40px; background: var(--accent); color: #fff;
+  border: 0; border-radius: 40px; color: #fff;
+  background: linear-gradient(135deg, #3b8bff 0%, #6a5cff 100%);
   font: 700 13px/1 inherit; font-family: inherit; padding: 10px 24px; cursor: pointer;
-  box-shadow: 0 1px 2px rgba(2, 96, 160, .18), 0 4px 12px rgba(2, 151, 248, .22);
-  transition: background-color .16s, transform .12s, box-shadow .16s;
+  box-shadow: 0 1px 2px rgba(3, 10, 40, .35), 0 6px 20px rgba(80, 120, 255, .42),
+    inset 0 1px 0 rgba(255, 255, 255, .25);
+  transition: filter .16s, transform .12s, box-shadow .16s, background-color .16s;
 }
-.btn:hover { background: #1ea3fa; box-shadow: 0 2px 4px rgba(2, 96, 160, .2), 0 6px 18px rgba(2, 151, 248, .3); }
-.btn:active { transform: translateY(1px); box-shadow: 0 1px 2px rgba(2, 96, 160, .2); }
+.btn:hover { filter: brightness(1.1); box-shadow: 0 2px 4px rgba(3, 10, 40, .35), 0 8px 26px rgba(80, 120, 255, .55), inset 0 1px 0 rgba(255, 255, 255, .25); }
+.btn:active { transform: translateY(1px); box-shadow: 0 1px 2px rgba(3, 10, 40, .4); }
 .btn.ghost {
-  background: transparent; color: #7c8899; box-shadow: none;
-  border: 1px solid #e0e5ea;
+  background: transparent; color: #aeb9cf; box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, .16);
 }
-.btn.ghost:hover { background: #f7f9fb; border-color: #cfd6de; color: var(--ink); box-shadow: none; }
+.btn.ghost:hover { background: rgba(255, 255, 255, .07); border-color: rgba(255, 255, 255, .3); color: #fff; box-shadow: none; filter: none; }
 .btn.small { padding: 7px 14px; font-size: 12px; gap: 6px; }
 .btn .icon { width: 13px; height: 13px; }
 #file-input { display: none; }
@@ -159,20 +177,24 @@ footer a:hover { opacity: .75; }
 #queue {
   flex: 1; overflow-y: auto; padding: 12px 14px;
   display: flex; flex-direction: column; gap: 6px; min-height: 150px; max-height: 260px;
+  scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .16) transparent;
 }
+#queue::-webkit-scrollbar { width: 8px; }
+#queue::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .14); border-radius: 4px; }
+#queue::-webkit-scrollbar-track { background: transparent; }
 #queue:empty::after {
   content: '上传的文件会显示在这里';
   margin: auto; font-size: 12px; color: var(--muted);
 }
 .item {
   display: flex; align-items: center; gap: 10px;
-  padding: 6px 8px; border-radius: 7px; transition: background .15s;
+  padding: 6px 8px; border-radius: 10px; transition: background .15s;
 }
-.item:hover { background: #f7f9fb; }
+.item:hover { background: rgba(255, 255, 255, .045); }
 .item .thumb {
-  width: 32px; height: 32px; border-radius: 5px; flex: none; object-fit: cover;
-  box-shadow: 0 0 0 1px rgba(12, 12, 13, .06);
-  background: #f1f3f6; display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px; flex: none; object-fit: cover;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .09);
+  background: rgba(255, 255, 255, .06); display: flex; align-items: center; justify-content: center;
   font-size: 15px; overflow: hidden;
 }
 .item .info { flex: 1; min-width: 0; }
@@ -183,10 +205,10 @@ footer a:hover { opacity: .75; }
 .item .meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .item .meta.error { color: var(--err); }
 .progress {
-  height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; margin-top: 5px;
+  height: 3px; border-radius: 2px; background: rgba(255, 255, 255, .09); overflow: hidden; margin-top: 5px;
   transition: height .3s, margin-top .3s, opacity .25s;
 }
-.progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+.progress i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #3b8bff, #7c6cff); transition: width .15s; }
 .item.done .progress { height: 0; margin-top: 0; opacity: 0; }
 .item.error .progress i { background: var(--err); }
 .item .state { display: inline-flex; align-items: center; gap: 4px; }
@@ -194,59 +216,69 @@ footer a:hover { opacity: .75; }
 .item .copy-one {
   flex: none; width: 26px; height: 26px; padding: 0; border: 0; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 7px; background: transparent; color: var(--muted);
+  border-radius: 8px; background: transparent; color: var(--muted);
   opacity: 0; transition: opacity .15s, background .15s, color .15s;
 }
 .item:hover .copy-one, .item .copy-one:focus-visible { opacity: 1; }
-.item .copy-one:hover { background: var(--accent-soft); color: var(--accent); }
+.item .copy-one:hover { background: var(--accent-soft); color: #9cc2ff; }
 .item .copy-one .icon { width: 14px; height: 14px; }
 @media (hover: none) { .item .copy-one { opacity: 1; } }
 .out { border-top: 1px solid var(--line); padding: 11px 14px; flex: none; }
 /* Segmented control reads tighter than four separate pills. */
 .tabs {
   display: inline-flex; gap: 2px; margin-bottom: 9px; padding: 2px;
-  background: #f4f6f8; border-radius: 8px;
+  background: rgba(255, 255, 255, .055); border-radius: 10px;
 }
 .tabs button {
-  border: 0; background: transparent; color: #7c8899; border-radius: 6px;
+  border: 0; background: transparent; color: #8b96b0; border-radius: 8px;
   padding: 5px 11px; font: 600 11px inherit; font-family: inherit; cursor: pointer;
   transition: background .15s, color .15s, box-shadow .15s;
 }
 .tabs button:hover { color: var(--ink); }
 .tabs button.active {
-  background: #fff; color: var(--accent);
-  box-shadow: 0 1px 2px rgba(12, 12, 13, .08);
+  background: linear-gradient(135deg, #3b8bff 0%, #6a5cff 100%); color: #fff;
+  box-shadow: 0 2px 8px rgba(80, 120, 255, .4);
 }
 #link-output {
   /* One entry per line (ids are long) so rows map 1:1 to links; overflow scrolls. */
   white-space: pre; overflow: auto;
   width: 100%; height: 72px; max-height: 180px; resize: vertical; padding: 8px;
-  border: 1px solid #e4e8ed; border-radius: 4px; color: var(--body);
+  border: 1px solid rgba(255, 255, 255, .1); border-radius: 10px;
+  background: rgba(3, 6, 18, .55); color: #c7d3ea;
   font: 11px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace;
 }
-#link-output:focus { outline: none; border-color: rgba(2, 151, 248, .5); }
+#link-output:focus { outline: none; border-color: rgba(120, 170, 255, .55); box-shadow: 0 0 0 3px rgba(96, 150, 255, .18); }
 .actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 9px; }
 
 /* ---- setup notice ---- */
-#setup-notice { display: none; width: 100%; max-width: 760px; margin-bottom: 18px; }
+#setup-notice { display: none; width: 100%; max-width: 780px; margin-bottom: 18px; }
 #setup-notice .problem {
-  border-radius: 3px; padding: 12px 14px; margin-bottom: 8px;
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
   font-size: 12px; line-height: 1.7; border-left: 3px solid;
-  background: #fff; box-shadow: var(--card-shadow);
+  background: rgba(10, 15, 32, .85); box-shadow: var(--card-shadow);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
 #setup-notice .problem b { display: block; font-weight: 700; margin-bottom: 2px; }
-#setup-notice .problem.error { border-left-color: var(--err); color: #a8323a; }
-#setup-notice .problem.warning { border-left-color: #f5a524; color: #94620f; }
-#setup-notice .problem.info { border-left-color: var(--accent); color: #0b6ba8; }
+#setup-notice .problem.error { border-left-color: var(--err); color: #f0b3b8; }
+#setup-notice .problem.warning { border-left-color: #ffb84d; color: #ecd3a3; }
+#setup-notice .problem.info { border-left-color: var(--accent); color: #b9d9f7; }
 
 /* ---- toast ---- */
 #toast {
   position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%) translateY(18px);
-  background: rgba(24, 30, 42, .94); color: #fff; padding: 10px 20px; border-radius: 40px;
+  background: rgba(9, 13, 27, .92); color: #eef3ff; padding: 10px 20px; border-radius: 40px;
+  border: 1px solid rgba(255, 255, 255, .13);
+  box-shadow: 0 12px 32px rgba(1, 4, 16, .5);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   font-size: 13px; opacity: 0; pointer-events: none; z-index: 10;
   transition: opacity .2s, transform .2s;
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ring::before { animation: none; }
+  .btn, .topbar a, .uploader { transition: none; }
+}
 
 /* ---- narrow screens: stack the two columns ---- */
 @media (max-width: 760px) {
@@ -257,6 +289,7 @@ footer a:hover { opacity: .75; }
   .uploader .inner { min-height: 0; padding: 26px 20px; }
   #queue { max-height: 200px; }
 }
+
 </style>
 </head>
 <body>
@@ -342,26 +375,128 @@ footer a:hover { opacity: .75; }
   var toast = document.getElementById('toast');
   var toastTimer = null;
 
-  // ---- wallpaper slideshow ----
-  // Mirrors the original homepage: five Bing pictures cross-fading on a 30s
-  // cycle, 6s apart. Any failure leaves the CSS gradient in place.
-  (function loadWallpapers() {
-    fetch('/api/bing/wallpaper').then(function (res) {
-      if (!res.ok) throw new Error('wallpaper unavailable');
-      return res.json();
-    }).then(function (payload) {
-      var images = (payload && payload.data) || [];
-      if (!images.length) return;
-      var backdrop = document.getElementById('backdrop');
-      images.slice(0, 5).forEach(function (image, index) {
-        if (!image || !image.url) return;
-        var figure = document.createElement('figure');
-        var url = /^https?:/.test(image.url) ? image.url : 'https://cn.bing.com' + image.url;
-        figure.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")';
-        figure.style.animationDelay = (index * 6) + 's';
-        backdrop.appendChild(figure);
+  // ---- starfield backdrop ----
+  // Canvas starfield over the CSS deep-space gradient: twinkling stars with a
+  // slow drift and the occasional shooting star. An explicit backgroundImage
+  // from /api/config still replaces the whole backdrop (see the config block
+  // below, which clears #backdrop before painting it).
+  (function initStarfield() {
+    var backdrop = document.getElementById('backdrop');
+    if (!backdrop) return;
+    var canvas = document.createElement('canvas');
+    canvas.id = 'starfield';
+    canvas.setAttribute('aria-hidden', 'true');
+    backdrop.appendChild(canvas);
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var DPR = Math.min(window.devicePixelRatio || 1, 2);
+    var W = 0;
+    var H = 0;
+    var stars = [];
+    var meteors = [];
+    var lastMeteor = 0;
+
+    function seed() {
+      var count = Math.min(260, Math.floor(W * H / 6500));
+      stars = [];
+      for (var i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: Math.random() * 1.3 + 0.3,
+          base: Math.random() * 0.55 + 0.25,   // resting alpha
+          amp: Math.random() * 0.35,          // twinkle amplitude
+          speed: Math.random() * 0.9 + 0.25,  // twinkle speed
+          phase: Math.random() * Math.PI * 2,
+          drift: Math.random() * 0.014 + 0.004
+        });
+      }
+    }
+
+    function resize() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = Math.floor(W * DPR);
+      canvas.height = Math.floor(H * DPR);
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      seed();
+      if (reduced) draw(0);
+    }
+
+    function spawnMeteor(now) {
+      var fromLeft = Math.random() < 0.5;
+      meteors.push({
+        x: fromLeft ? Math.random() * W * 0.35 : W * 0.45 + Math.random() * W * 0.4,
+        y: Math.random() * H * 0.3,
+        vx: (fromLeft ? 1 : -1) * (5.2 + Math.random() * 2.4),
+        vy: 2.6 + Math.random() * 1.4,
+        life: 1
       });
-    }).catch(function () { /* gradient fallback already painted */ });
+      lastMeteor = now;
+    }
+
+    function draw(now) {
+      ctx.clearRect(0, 0, W, H);
+      var t = now / 1000;
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
+        var a = s.base + Math.sin(t * s.speed + s.phase) * s.amp;
+        if (a < 0.05) a = 0.05;
+        ctx.globalAlpha = a;
+        ctx.fillStyle = '#dfe9ff';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+        if (s.r > 1.15) {  // soft halo on the bigger stars
+          ctx.globalAlpha = a * 0.16;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r * 3.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        s.y += s.drift;
+        if (s.y - 2 > H) { s.y = -2; s.x = Math.random() * W; }
+      }
+      ctx.globalAlpha = 1;
+
+      if (!reduced && now - lastMeteor > 6000 && meteors.length < 2 && Math.random() < 0.02) {
+        spawnMeteor(now);
+      }
+      for (var j = meteors.length - 1; j >= 0; j--) {
+        var m = meteors[j];
+        var grad = ctx.createLinearGradient(m.x, m.y, m.x - m.vx * 9, m.y - m.vy * 9);
+        grad.addColorStop(0, 'rgba(255,255,255,' + (0.85 * m.life) + ')');
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.6;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(m.x, m.y);
+        ctx.lineTo(m.x - m.vx * 9, m.y - m.vy * 9);
+        ctx.stroke();
+        m.x += m.vx;
+        m.y += m.vy;
+        m.life -= 0.012;
+        if (m.life <= 0 || m.x < -120 || m.x > W + 120 || m.y > H + 60) meteors.splice(j, 1);
+      }
+    }
+
+    function loop(now) {
+      draw(now || 0);
+      requestAnimationFrame(loop);
+    }
+
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 160);
+    });
+
+    resize();
+    if (!reduced) requestAnimationFrame(loop);
   })();
 
   // ---- site config (/api/config) ----
