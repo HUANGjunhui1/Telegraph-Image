@@ -4,10 +4,7 @@ import { createDefaultMetadata, putMetadata } from "./utils/metadata.js";
 import { allocateShortId, isShortUrlsEnabled, putShortLink } from "./utils/shortlink.js";
 import { getUploadProvider } from "./storage/index.js";
 
-// Shared upload handler. Uploads are no longer protected by Basic Auth
-// (UPLOAD_BASIC_USER / UPLOAD_BASIC_PASS are not used anymore); this handler
-// is mounted on a secret path instead — see
-// functions/5eb5e635-9ce6-4ad7-95b3-1350b58e4334.js.
+
 export async function handleUpload(context) {
     const { request, env } = context;
 
