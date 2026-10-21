@@ -2,10 +2,11 @@ import { handleUpload } from "./upload.js";
 import { isEmptyBinding } from "./utils/http.js";
 
 // Secret-path uploads, configured by the UPLOAD_UUID environment variable
-// (just the UUID segment, no slashes). POST /<UPLOAD_UUID> uploads directly
-// with no Basic Auth; GET /<UPLOAD_UUID> redirects to the homepage and sets
-// an upload_key cookie so /api/config will disclose the upload path to this
-// browser. Everything else falls through to normal Pages routing.
+// (just the UUID segment, no slashes). POST /<UPLOAD_UUID> runs the upload
+// handler with no Basic Auth, and GET /<UPLOAD_UUID> simply redirects to
+// the homepage. The homepage itself uploads through this same path —
+// /api/config tells it where uploads go. Everything else falls through to
+// normal Pages routing.
 export async function onRequest(context) {
     const { request, env } = context;
 
@@ -20,13 +21,7 @@ export async function onRequest(context) {
                 return handleUpload(context);
             }
             if (request.method === 'GET') {
-                return new Response(null, {
-                    status: 302,
-                    headers: {
-                        'Location': new URL('/', request.url).toString(),
-                        'Set-Cookie': `upload_key=${secret}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`,
-                    },
-                });
+                return Response.redirect(new URL('/', request.url), 302);
             }
         }
     }

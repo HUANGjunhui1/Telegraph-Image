@@ -1,5 +1,5 @@
 import { errorHandling, telemetryData } from "./utils/middleware.js";
-import { jsonResponse } from "./utils/http.js";
+import { isEmptyBinding, jsonResponse } from "./utils/http.js";
 import { createDefaultMetadata, putMetadata } from "./utils/metadata.js";
 import { allocateShortId, isShortUrlsEnabled, putShortLink } from "./utils/shortlink.js";
 import { getUploadProvider } from "./storage/index.js";
@@ -57,8 +57,15 @@ export async function handleUpload(context) {
     }
 }
 
-// The plain /upload route is disabled: uploads only happen through the
-// secret path.
-export async function onRequestPost() {
-    return jsonResponse({ error: 'Not found' }, { status: 404 });
+// The plain /upload route is the fallback for deployments without a secret
+// path: once UPLOAD_UUID is configured, uploads happen only through
+// /<UPLOAD_UUID> (see functions/_middleware.js) and this route is closed.
+export async function onRequestPost(context) {
+    const secret = isEmptyBinding(context.env.UPLOAD_UUID)
+        ? ''
+        : String(context.env.UPLOAD_UUID).trim();
+    if (secret) {
+        return jsonResponse({ error: 'Not found' }, { status: 404 });
+    }
+    return handleUpload(context);
 }
