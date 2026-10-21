@@ -1,19 +1,17 @@
 import { errorHandling, telemetryData } from "./utils/middleware.js";
-import { authenticateUploadRequest } from "./utils/auth.js";
 import { jsonResponse } from "./utils/http.js";
 import { createDefaultMetadata, putMetadata } from "./utils/metadata.js";
 import { allocateShortId, isShortUrlsEnabled, putShortLink } from "./utils/shortlink.js";
 import { getUploadProvider } from "./storage/index.js";
 
-export async function onRequestPost(context) {
+// Shared upload handler. Uploads are no longer protected by Basic Auth
+// (UPLOAD_BASIC_USER / UPLOAD_BASIC_PASS are not used anymore); this handler
+// is mounted on a secret path instead — see
+// functions/5eb5e635-9ce6-4ad7-95b3-1350b58e4334.js.
+export async function handleUpload(context) {
     const { request, env } = context;
 
     try {
-        const authResponse = authenticateUploadRequest(request, env);
-        if (authResponse) {
-            return authResponse;
-        }
-
         const provider = getUploadProvider(env);
         provider.validateConfig(env);
 
@@ -57,4 +55,10 @@ export async function onRequestPost(context) {
         console.error('Upload error:', error);
         return jsonResponse({ error: error.message }, { status: 500 });
     }
+}
+
+// The plain /upload route is disabled: uploads only happen through the
+// secret path.
+export async function onRequestPost() {
+    return jsonResponse({ error: 'Not found' }, { status: 404 });
 }
