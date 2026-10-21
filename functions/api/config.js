@@ -5,16 +5,21 @@ import { getSetupStatus } from '../utils/setup-status.js';
 // Public, non-sensitive site configuration for the frontend. Any static UI can
 // read this once at startup instead of the deployment having to edit HTML.
 export async function onRequestGet(context) {
-    const { env } = context;
+    const { env, request } = context;
     const setup = getSetupStatus(env);
 
-    // Uploads go to a secret path segment from the UPLOAD_UUID environment
-    // variable when one is configured (see functions/_middleware.js), and
-    // fall back to the plain /upload route otherwise. The active path is
-    // public information for the frontend: the homepage uploads through it.
+    // Uploads happen only on the secret page whose segment comes from the
+    // UPLOAD_UUID environment variable. Its path is disclosed only to
+    // browsers that opened that page (the middleware sets an upload_key
+    // cookie there — see functions/_middleware.js). Without a secret, the
+    // plain /upload route is the upload path.
     const uploadSecret = isEmptyBinding(env.UPLOAD_UUID)
         ? ''
         : String(env.UPLOAD_UUID).trim().replace(/^\/+|\/+$/g, '');
+    const cookieHeader = request.headers.get('Cookie') || '';
+    const hasUploadKey = uploadSecret !== '' && cookieHeader
+        .split(';')
+        .some((part) => part.trim() === `upload_key=${uploadSecret}`);
 
     return jsonResponse({
         siteName: env.SITE_NAME || 'Telegraph-Image',
@@ -23,7 +28,9 @@ export async function onRequestGet(context) {
         enableShortUrls: isShortUrlsEnabled(env),
         uploadRequiresAuth: uploadSecret !== '',
         showAdminEntry: env.HIDE_ADMIN_ENTRY !== 'true',
-        uploadPath: uploadSecret ? `/${uploadSecret}` : '/upload',
+        ...(uploadSecret
+            ? (hasUploadKey ? { uploadPath: `/${uploadSecret}` } : {})
+            : { uploadPath: '/upload' }),
         // Deployment self-check so a misconfigured site says so instead of
         // failing silently on the first upload. Enum status only, no values.
         ready: setup.ready,
