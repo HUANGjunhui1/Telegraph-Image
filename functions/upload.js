@@ -4,7 +4,9 @@ import { createDefaultMetadata, putMetadata } from "./utils/metadata.js";
 import { allocateShortId, isShortUrlsEnabled, putShortLink } from "./utils/shortlink.js";
 import { getUploadProvider } from "./storage/index.js";
 
-
+// Shared upload handler. Uploads are no longer protected by Basic Auth
+// (UPLOAD_BASIC_USER / UPLOAD_BASIC_PASS are not used anymore); this handler
+// is mounted on a secret path instead — see functions/_middleware.js.
 export async function handleUpload(context) {
     const { request, env } = context;
 
@@ -53,6 +55,10 @@ export async function handleUpload(context) {
         return jsonResponse({ error: error.message }, { status: 500 });
     }
 }
+
+// The plain /upload route is the fallback for deployments without a secret
+// path: once UPLOAD_UUID is configured, uploads happen only through
+// /<UPLOAD_UUID> (see functions/_middleware.js) and this route is closed.
 export async function onRequestPost(context) {
     const secret = isEmptyBinding(context.env.UPLOAD_UUID)
         ? ''
