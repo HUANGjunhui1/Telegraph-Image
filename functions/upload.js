@@ -53,10 +53,6 @@ export async function handleUpload(context) {
         return jsonResponse({ error: error.message }, { status: 500 });
     }
 }
-
-// The plain /upload route is the fallback for deployments without a secret
-// path: once UPLOAD_UUID is configured, uploads happen only through
-// /<UPLOAD_UUID> (see functions/_middleware.js) and this route is closed.
 export async function onRequestPost(context) {
     const secret = isEmptyBinding(context.env.UPLOAD_UUID)
         ? ''
