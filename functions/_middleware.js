@@ -37,3 +37,6 @@ export async function onRequest(context) {
 
     return context.next();
 }
+
+// Deployment marker 2026-10-21: rebuild so the current UPLOAD_UUID
+// environment variable takes effect.
